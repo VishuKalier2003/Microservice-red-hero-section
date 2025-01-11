@@ -9,10 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import site.webred.model.TwoHero;
-import site.webred.service.PaneService;
 import site.webred.service.TwoService;
+import site.webred.utility.ResponseData;
 
 @RestController
 @RequestMapping("two-hero")
@@ -20,11 +21,14 @@ public class TwoControl {
     @Autowired
     private TwoService twoService;
     @Autowired
-    private PaneService paneService;
+    private RestTemplate restTemplate;
 
     @PostMapping("/create")
     public ResponseEntity<String> createTwoSectionHero(@RequestParam String tag) {
-        return ResponseEntity.ok().body(paneService.addPane(twoService.createTwoHeroSection(tag)));
+        ResponseData data = twoService.createTwoHeroSection(tag);
+        final String ControllerForDOM = String.format("http://localhost:8081/dom/create/primary?dataKey=%s&tag=%s",data.getDataKey(),data.getTag());
+        restTemplate.postForEntity(ControllerForDOM, null, String.class);
+        return ResponseEntity.ok().body(data.getDataKey());
     }
 
     @PostMapping("/update")
@@ -39,12 +43,8 @@ public class TwoControl {
 
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteEntry(@RequestParam String dataKey) {
+        restTemplate.delete(String.format("http://localhost:8081/dom/delete/nodeByEntry?dataKey=%s",dataKey));
         return ResponseEntity.ok().body(twoService.deleteTwoHero(dataKey));
-    }
-
-    @DeleteMapping("/deleteAll")
-    public ResponseEntity<Object> deleteEntries() {
-        return ResponseEntity.ok().body(twoService.emptyTwoHero());
     }
 
     @GetMapping("/color")

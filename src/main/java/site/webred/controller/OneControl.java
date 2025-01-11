@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 import site.webred.model.OneHero;
 import site.webred.service.OneService;
-import site.webred.service.PaneService;
 import site.webred.utility.ResponseData;
 
 @RestController
@@ -21,12 +21,13 @@ public class OneControl {
     @Autowired
     private OneService oneService;
     @Autowired
-    private PaneService paneService;
+    private RestTemplate restTemplate;
 
     @PostMapping("/create")
     public ResponseEntity<?> createOneHero(@RequestParam String tag) {
         ResponseData paneInput = oneService.createOneHeroSection(tag);
-        return ResponseEntity.ok().body(paneService.addPane(paneInput));
+        final String ControllerForDOM = String.format("http://localhost:8081/dom/create/primary?dataKey=%s&tag=%s",paneInput.getDataKey(),paneInput.getTag());
+        return ResponseEntity.ok().body(restTemplate.postForEntity(ControllerForDOM, null, String.class));
     }
 
     @PostMapping("/update")
@@ -36,8 +37,8 @@ public class OneControl {
 
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteOneHero(@RequestParam String dataKey) {
-        // Entry must be deleted from all instances, oneHero, Template and pane
-        return ResponseEntity.ok().body(paneService.removePane(oneService.deleteOneHero(dataKey)));
+        restTemplate.delete(String.format("http://localhost:8081/dom/delete/nodeByEntry?dataKey=%s",dataKey));
+        return ResponseEntity.ok().body(oneService.deleteOneHero(dataKey));
     }
 
     @GetMapping("/all")

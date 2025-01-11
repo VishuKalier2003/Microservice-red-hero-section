@@ -1,8 +1,6 @@
 package site.webred.service;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +17,6 @@ public class TwoService {
     private TwoRepo twoRepo;
     @Autowired
     private WebRedService webRedService;
-    @Autowired
-    private PaneService paneService;
 
     @PostConstruct
     public void init() {
@@ -77,7 +73,6 @@ public class TwoService {
         if (twoHero.getCustomName() == null || twoHero.getCustomName().isEmpty())
             twoHero.setCustomName(previous.getCustomName());
         // Since component will be created then updated, the dataKey of the component can be found in pane
-        twoHero.setTag(paneService.getPaneTag(uuid)); // Setting the Navbar Black tag as specified
         twoRepo.save(twoHero); // Imp: Service coupling
         webRedService.createTwoHero(twoHero); // Updating the same navbar in template document
         return twoHero.getDataKey();
@@ -87,15 +82,7 @@ public class TwoService {
         // Deleting the entry from pane, repo and template
         twoRepo.deleteById(dataKey);
         webRedService.deleteFromWebred(dataKey);
-        paneService.removePane(dataKey);
         return dataKey;
-    }
-
-    public String emptyTwoHero() {
-        twoRepo.deleteAll();
-        webRedService.clearTagEntries(new HashSet<>(Arrays.asList("Contain", "Cover")));
-        paneService.clearPaneTags(new HashSet<>(Arrays.asList("Contain", "Cover")));
-        return "Two Hero emptied";
     }
 
     public List<TwoHero> getAllHero() {

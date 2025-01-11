@@ -19,8 +19,6 @@ public class OneService {
     private OneRepo oneRepo;
     @Autowired
     private WebRedService webRedService;
-    @Autowired
-    private PaneService paneService;
 
     @PostConstruct
     public void init() {
@@ -73,8 +71,6 @@ public class OneService {
         if (oneHero.getCustomName() == null || oneHero.getCustomName().isEmpty())
             oneHero.setCustomName(previous.getCustomName());
         // Since component will be created then updated, the dataKey of the component
-        // can be found in pane
-        oneHero.setTag(paneService.getPaneTag(uuid)); // Setting the Navbar Black tag as specified
         oneRepo.save(oneHero); // Imp- Service coupling
         webRedService.createOneHero(oneHero); // Updating the same navbar in template document
         return oneHero.getDataKey();
@@ -90,7 +86,6 @@ public class OneService {
     public String emptyOneHero() {
         oneRepo.deleteAll();
         webRedService.clearTagEntries(new HashSet<>(Arrays.asList("Common", "Old School", "Centered", "Variant", "Horizon")));
-        paneService.clearPaneTags(new HashSet<>(Arrays.asList("Common", "Old School", "Centered", "Variant", "Horizon")));
         return "All Respective Tags deleted";
     }
 
