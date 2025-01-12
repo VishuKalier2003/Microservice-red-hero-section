@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import site.webred.model.TwoHero;
@@ -16,7 +17,7 @@ public class TwoService {
     @Autowired
     private TwoRepo twoRepo;
     @Autowired
-    private WebRedService webRedService;
+    private RestTemplate restTemplate;
 
     @PostConstruct
     public void init() {
@@ -48,7 +49,8 @@ public class TwoService {
         twoHero.setColorSwitch(false);
         twoHero.setTag(tag);
         twoRepo.save(twoHero);
-        webRedService.createTwoHero(twoHero);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/create/two-hero");
+        restTemplate.postForEntity(ControllerForTemplate, twoHero, String.class);
         // This response data will be used to create the entry in pane
         return new ResponseData(twoHero.getDataKey(), twoHero.getTag(), twoHero.getCustomName());
     }
@@ -73,15 +75,17 @@ public class TwoService {
         if (twoHero.getCustomName() == null || twoHero.getCustomName().isEmpty())
             twoHero.setCustomName(previous.getCustomName());
         // Since component will be created then updated, the dataKey of the component can be found in pane
-        twoRepo.save(twoHero); // Imp: Service coupling
-        webRedService.createTwoHero(twoHero); // Updating the same navbar in template document
+        twoRepo.save(twoHero);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/create/two-hero");
+        restTemplate.postForEntity(ControllerForTemplate, twoHero, String.class);
         return twoHero.getDataKey();
     }
 
     public String deleteTwoHero(String dataKey) {
         // Deleting the entry from pane, repo and template
         twoRepo.deleteById(dataKey);
-        webRedService.deleteFromWebred(dataKey);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/delete/clear?dataKey=%s",dataKey);
+        restTemplate.delete(ControllerForTemplate);
         return dataKey;
     }
 

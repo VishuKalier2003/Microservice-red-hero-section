@@ -1,12 +1,11 @@
 package site.webred.service;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
 import site.webred.model.OneHero;
@@ -18,7 +17,7 @@ public class OneService {
     @Autowired
     private OneRepo oneRepo;
     @Autowired
-    private WebRedService webRedService;
+    private RestTemplate restTemplate;
 
     @PostConstruct
     public void init() {
@@ -41,15 +40,11 @@ public class OneService {
 
     public ResponseData createOneHeroSection(String tag) {
         OneHero oneHero = new OneHero();
-        oneHero.setDataKey(generateKey());
-        oneHero.setHeroLink("");
-        oneHero.setHeroTitle("");
-        oneHero.setHeroButton("");
-        oneHero.setHeroContent("");
-        oneHero.setColorSwitch(false);
-        oneHero.setTag(tag);
-        oneRepo.save(oneHero);
-        webRedService.createOneHero(oneHero);
+        oneHero.setDataKey(generateKey()); oneHero.setHeroLink(""); oneHero.setHeroTitle("");
+        oneHero.setHeroButton(""); oneHero.setHeroContent("");
+        oneHero.setColorSwitch(false); oneHero.setTag(tag); oneRepo.save(oneHero);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/create/one-hero");
+        restTemplate.postForEntity(ControllerForTemplate, oneHero, String.class);
         return new ResponseData(oneHero.getDataKey(), oneHero.getTag(), oneHero.getCustomName());
     }
 
@@ -71,21 +66,22 @@ public class OneService {
         if (oneHero.getCustomName() == null || oneHero.getCustomName().isEmpty())
             oneHero.setCustomName(previous.getCustomName());
         // Since component will be created then updated, the dataKey of the component
-        oneRepo.save(oneHero); // Imp- Service coupling
-        webRedService.createOneHero(oneHero); // Updating the same navbar in template document
+        oneRepo.save(oneHero);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/create/one-hero");
+        restTemplate.postForEntity(ControllerForTemplate, oneHero, String.class);
         return oneHero.getDataKey();
     }
 
     public String deleteOneHero(String dataKey) {
         // Deleting from both webred and oneHero repo
         oneRepo.deleteById(dataKey);
-        webRedService.deleteFromWebred(dataKey);
+        final String ControllerForTemplate = String.format("http://localhost:8081/template/delete/clear?dataKey=%s",dataKey);
+        restTemplate.delete(ControllerForTemplate);
         return dataKey;
     }
 
     public String emptyOneHero() {
         oneRepo.deleteAll();
-        webRedService.clearTagEntries(new HashSet<>(Arrays.asList("Common", "Old School", "Centered", "Variant", "Horizon")));
         return "All Respective Tags deleted";
     }
 
